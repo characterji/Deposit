@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHP Deposit System</title>
+    <style>
+        /* क्लीन और सरल दिखने के लिए CSS */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .deposit-container {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #28a745, #218838);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.02);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="deposit-container">
+        <h2>Secure Deposit</h2>
+        <form id="deposit-form">
+            <div class="form-group">
+                <label for="amount">Amount (INR)</label>
+                <input type="number" id="amount" placeholder="e.g., 100" required>
+            </div>
+            <div class="form-group">
+                <label for="customer_mobile">Mobile Number (Optional)</label>
+                <input type="text" id="customer_mobile" placeholder="Enter 10-digit mobile number">
+            </div>
+            <button id="submit-button" type="submit">Proceed to Pay</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        document.getElementById('deposit-form').addEventListener('submit', async function(event) {
+            // फॉर्म को सबमिट होने से रोकें
+            event.preventDefault();
+
+            const amount = document.getElementById('amount').value;
+            const customer_mobile = document.getElementById('customer_mobile').value;
+            const messageDiv = document.getElementById('message');
+            const submitButton = document.getElementById('submit-button');
+
+            // बटन को डिसेबल करें और मैसेज दिखाएँ
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            messageDiv.textContent = '';
+            messageDiv.style.color = 'black';
+
+            try {
+                // हमारी सुरक्षित PHP स्क्रिप्ट पर अनुरोध भेजें
+                const response = await fetch('deposit.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    // केवल सुरक्षित डेटा भेजें (API कुंजी नहीं)
+                    body: JSON.stringify({
+                        amount: amount,
+                        customer_mobile: customer_mobile
+                    })
+                });
+
+                // PHP स्क्रिप्ट से मिले जवाब को JSON में बदलें
+                const result = await response.json();
+
+                if (result.status === 'success' && result.payment_url) {
+                    // अगर सफलता मिली, तो उपयोगकर्ता को भुगतान पेज पर भेजें
+                    messageDiv.textContent = 'Redirecting to payment page...';
+                    window.location.href = result.payment_url;
+                } else {
+                    // अगर कोई त्रुटि हुई, तो उसे दिखाएँ
+                    messageDiv.textContent = 'Error: ' + (result.message || 'Unknown error');
+                    messageDiv.style.color = 'red';
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Proceed to Pay';
+                }
+
+            } catch (error) {
+                // नेटवर्क या अन्य त्रुटि होने पर
+                messageDiv.textContent = 'An unexpected error occurred. Please check your connection and try again.';
+                messageDiv.style.color = 'red';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Proceed to Pay';
+            }
+        });
+    </script>
+
+</body>
+</html>
